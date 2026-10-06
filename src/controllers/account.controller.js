@@ -2,10 +2,11 @@ import { pool } from '../db.js';
 
 export const createAccount = async (req, res) => {
   try {
-    const { user_id, initial_deposit = 0 } = req.body;
+    const { user_id, initial_deposit = 0 } = req.validatedData.body;
+    console.log(req.validatedData.body);
 
     // Business Logic Guard: initial deposit should not lower than 500
-    if (Number(initial_deposit) < 500) {
+    if (initial_deposit < 500) {
       return res.status(400).json({
         status: 'fail',
         message: 'Minimum initial deposit for opening an account is 500 Baht',
@@ -43,7 +44,7 @@ export const createAccount = async (req, res) => {
 
 export const getAccountByNumber = async (req, res) => {
   try {
-    const { accountNumber } = req.params;
+    const { accountNumber } = req.validatedData.params;
 
     const query = `
       SELECT 
@@ -79,12 +80,19 @@ export const getAccountByNumber = async (req, res) => {
 
 export const getAccountsByUserId = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { userId } = req.validatedData.params;
 
     const result = await pool.query(
       'SELECT * FROM accounts WHERE user_id = $1 ORDER BY created_at DESC',
       [userId],
     );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Account not found',
+      });
+    }
 
     res.status(200).json({
       status: 'success',

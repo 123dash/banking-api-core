@@ -5,9 +5,15 @@ import {
   getAccountByNumber,
   getAccountsByUserId,
 } from '../controllers/account.controller.js';
+import { validate } from '../middlewares/validate.js';
+import {
+  createAccountSchema,
+  getAccountByNumberSchema,
+  getAccountsByUserIdSchema,
+} from '../schemas/account.schema.js';
 
 export const accountRouter = express.Router();
 
-accountRouter.post('/', createAccount);
-accountRouter.get('/:accountNumber', getAccountByNumber);
-accountRouter.get('/user/:userId', getAccountsByUserId);
+accountRouter.post('/', validate(createAccountSchema), createAccount);
+accountRouter.get('/:accountNumber', validate(getAccountByNumberSchema), getAccountByNumber);
+accountRouter.get('/user/:userId', validate(getAccountsByUserIdSchema), getAccountsByUserId);

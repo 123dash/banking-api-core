@@ -2,8 +2,8 @@ import { pool } from '../db.js';
 
 export const createUser = async (req, res) => {
   try {
-    const { full_name, email } = req.body;
-    console.log(req.body);
+    const { full_name, email } = req.validatedData.body;
+    console.log(req.validatedData.body);
 
     const query = `
       INSERT INTO users (full_name, email)
@@ -27,7 +27,8 @@ export const createUser = async (req, res) => {
 
 export const getUserById = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.validatedData.params;
+    console.log(req.validatedData.params);
 
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
 

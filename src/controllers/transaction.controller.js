@@ -2,12 +2,14 @@ import { pool } from '../db.js';
 
 export const deposit = async (req, res) => {
   try {
-    const { account_number, amount } = req.body;
+    const { account_number, amount } = req.validatedData.body;
 
-    if (Number(amount) <= 0) {
+    // Business Logic: deposit amount must not be zero or lower
+    if (amount <= 0) {
       return res.status(400).json({ status: 'fail', message: 'Amount must be greater than 0' });
     }
 
+    // Check if acc exists
     const accCheck = await pool.query(
       'SELECT id, balance FROM accounts WHERE account_number = $1',
       [account_number],
@@ -18,6 +20,7 @@ export const deposit = async (req, res) => {
 
     const account = accCheck.rows[0];
 
+    // Update account balance in the db
     await pool.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [
       amount,
       account.id,
@@ -42,12 +45,14 @@ export const deposit = async (req, res) => {
 
 export const withdraw = async (req, res) => {
   try {
-    const { account_number, amount } = req.body;
+    const { account_number, amount } = req.validatedData.body;
 
-    if (Number(amount) <= 0) {
+    // Business Logic: deposit amount must not be zero or lower
+    if (amount <= 0) {
       return res.status(400).json({ status: 'fail', message: 'Amount must be greater than 0' });
     }
 
+    // Check if acc exists
     const accCheck = await pool.query(
       'SELECT id, balance FROM accounts WHERE account_number = $1',
       [account_number],
@@ -58,7 +63,8 @@ export const withdraw = async (req, res) => {
 
     const account = accCheck.rows[0];
 
-    if (Number(account.balance) < Number(amount)) {
+    // Business Logic: Check if account balance lower than the amount
+    if (Number(account.balance) < amount) {
       return res.status(400).json({ status: 'fail', message: 'Insufficient funds' });
     }
 
@@ -86,16 +92,10 @@ export const withdraw = async (req, res) => {
 
 export const transfer = async (req, res) => {
   // Check required inputs
-  const { sender_account_number, receiver_account_number, amount } = req.body;
-  if (!sender_account_number || !receiver_account_number || !amount) {
-    return res.status(400).json({
-      status: 'fail',
-      message: 'missing payload',
-    });
-  }
+  const { sender_account_number, receiver_account_number, amount } = req.validatedData.body;
 
   // Check invalid amount or self transfer
-  if (Number(amount) <= 0 || sender_account_number === receiver_account_number) {
+  if (amount <= 0 || sender_account_number === receiver_account_number) {
     return res.status(400).json({ status: 'fail', message: 'Invalid transaction parameters' });
   }
 
@@ -120,7 +120,7 @@ export const transfer = async (req, res) => {
     const sender = senderRes.rows[0];
 
     // Check balance
-    if (Number(sender.balance) < Number(amount)) {
+    if (Number(sender.balance) < amount) {
       await client.query('ROLLBACK');
       return res.status(400).json({ status: 'fail', message: 'Insufficient funds' });
     }
@@ -175,9 +175,9 @@ export const transfer = async (req, res) => {
 
 export const getStatement = async (req, res) => {
   try {
-    const { accountNumber } = req.params;
+    const { accountNumber } = req.validatedData.params;
 
-    // find account id
+    // Check if account exists
     const accCheck = await pool.query('SELECT id FROM accounts WHERE account_number = $1', [
       accountNumber,
     ]);
