@@ -1,3 +1,5 @@
+import { fromError } from 'zod-validation-error';
+
 export const validate = (schemas) => {
   return (req, res, next) => {
     const result = schemas.safeParse({
@@ -9,7 +11,7 @@ export const validate = (schemas) => {
     if (!result.success) {
       return res.status(400).json({
         status: 'fail',
-        message: 'invalid request data',
+        message: fromError(result.error).message,
       });
     }
     req.validatedData = result.data;
